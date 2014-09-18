@@ -8,6 +8,8 @@ public class FibWalker implements Runnable
   private long x = 1; // fib (step-2)
   private long y = 1; // Last sequence value: fib (step-1)
   private long z; // Current sequence value: fib (step)
+  private long previousX = x;
+  private long previousY = y;
 
   private Thread thisThread;
 
@@ -38,11 +40,10 @@ public class FibWalker implements Runnable
     {
       synchronized (this)
       {
+        previousX = x;
+        previousY = y;
+        
         step++;
-        // x = fib(step - 2);
-        // y = fib(step - 1);
-        // x = y;
-        // y = z;
         if (z == 7540113804746346429L)
         {
           x = 1;
@@ -51,13 +52,13 @@ public class FibWalker implements Runnable
         z = x + y;
         x = y;
         y = z;
-      }
 
-      if (thisThread.isInterrupted())
-      {
-        System.out
-            .println(this.NAME + " dies gracefully: " + this.step + ") " + this.x + ", " + this.y + ", " + this.z);
-        return;
+        if (thisThread.isInterrupted())
+        {
+          System.out.println(this.NAME + " dies gracefully: " + this.step + ") " + this.previousX + ", " + this.previousY + ", "
+              + this.z);
+          return;
+        }
       }
     }
   }
@@ -76,7 +77,7 @@ public class FibWalker implements Runnable
   @Override
   public synchronized String toString()
   {
-    return this.getName() + " " + this.step + ") " + this.x + ", " + this.y + ", " + this.z;
+    return this.getName() + " " + this.step + ") " + this.previousX + ", " + this.previousY + ", " + this.z;
   }
 
   public String getName()
@@ -92,14 +93,14 @@ public class FibWalker implements Runnable
     walkerA.start();
     walkerB.start();
 
-    for (int i = 0; i < 5; i++)
+    for (int i = 0; i < 10; i++)
     {
       try
       {
         Thread.sleep(2000);
 
-        System.out.println(walkerA.toString());
-        System.out.println(walkerB.toString());
+        System.out.println(walkerA);
+        System.out.println(walkerB);
         System.out.println();
       }
       catch (InterruptedException e)
