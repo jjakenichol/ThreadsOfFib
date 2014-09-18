@@ -2,16 +2,14 @@ package Walker;
 
 public class FibWalker implements Runnable
 {
+  private static final boolean DEBUG = false;
+  private final String NAME; // Name of the thread, set in constructor
+  private long step = 0; // Fibonacci sequence number
+  private long x = 1; // fib (step-2)
+  private long y = 1; // Last sequence value: fib (step-1)
+  private long z; // Current sequence value: fib (step)
 
-  private final String NAME;      // Name of the thread, set in constructor
-  private long         step  = 0; // Fibonacci sequence number
-  private long         x     = 1; // fib (step-2)
-  private long         y     = 1; // Last sequence value: fib (step-1)
-  private long         z;         // Current sequence value: fib (step)
-  private static long  start = 0;
-  private static long  end   = 0;
-
-  private Thread       thisThread;
+  private Thread thisThread;
 
   public FibWalker(String name)
   {
@@ -35,43 +33,50 @@ public class FibWalker implements Runnable
   @Override
   public void run()
   {
-    // TODO Auto-generated method stub
-
-    System.out.println("Running " + this.NAME);
-    while (end - start < 4000)
+    if (DEBUG) System.out.println("Running " + this.NAME);
+    while (true)
     {
-      end = System.currentTimeMillis();
-
-      step++;
-      x = fib(step - 2);
-      y = fib(step - 1);
-      if (z == 7540113804746346429L)
+      synchronized (this)
       {
-        x = 1;
-        y = 1;
+        step++;
+        // x = fib(step - 2);
+        // y = fib(step - 1);
+        // x = y;
+        // y = z;
+        if (z == 7540113804746346429L)
+        {
+          x = 1;
+          y = 1;
+        }
+        z = x + y;
+        x = y;
+        y = z;
       }
-      z = x + y;
-      if ((end - start) % 2000 == 0) System.out.println(this.toString());
+
+      if (thisThread.isInterrupted())
+      {
+        System.out
+            .println(this.NAME + " dies gracefully: " + this.step + ") " + this.x + ", " + this.y + ", " + this.z);
+        return;
+      }
     }
-    System.exit(0);
   }
 
   private void start()
   {
-    System.out.println("Starting Thread" + this.NAME);
+    if (DEBUG) System.out.println("Starting Thread " + this.NAME);
     if (thisThread == null)
     {
       thisThread = new Thread(this, this.getName());
       thisThread.start();
     }
-    else System.out.println("Thread \"" + this.toString() + "\" is already running");
-
+    else if (DEBUG) System.out.println("Thread " + this.NAME + " is already running");
   }
 
   @Override
-  public String toString()
+  public synchronized String toString()
   {
-    return this.getName() + " " + this.step + ") " + this.x + " " + this.y + " " + this.z;
+    return this.getName() + " " + this.step + ") " + this.x + ", " + this.y + ", " + this.z;
   }
 
   public String getName()
@@ -81,14 +86,30 @@ public class FibWalker implements Runnable
 
   public static void main(String args[])
   {
-    start = System.currentTimeMillis();
+    FibWalker walkerA = new FibWalker("Walker A");
+    FibWalker walkerB = new FibWalker("Walker B");
 
-    FibWalker fibWalker1 = new FibWalker("fibWalker1");
-    FibWalker fibWalker2 = new FibWalker("fibWalker2");
+    walkerA.start();
+    walkerB.start();
 
-    fibWalker1.start();
-    fibWalker2.start();
+    for (int i = 0; i < 5; i++)
+    {
+      try
+      {
+        Thread.sleep(2000);
 
-    // System.out.println(fibWalker1.fib(1000));
+        System.out.println(walkerA.toString());
+        System.out.println(walkerB.toString());
+        System.out.println();
+      }
+      catch (InterruptedException e)
+      {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }
+    }
+
+    walkerA.thisThread.interrupt();
+    walkerB.thisThread.interrupt();
   }
 }
